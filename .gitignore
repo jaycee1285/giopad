@@ -1,0 +1,14 @@
+# Build output
+giopad
+*.apk
+
+# Go
+go.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Nix
+result
