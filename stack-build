@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Build script for giopad
+
+set -e
+
+case "${1:-desktop}" in
+    desktop)
+        nix develop --command go build .
+        ;;
+    android)
+        # Get paths from nix-shell dynamically
+        GO_PATH=$(nix-shell -p go --run "dirname \$(which go)")
+        JAVA_HOME=$(nix-shell -p jdk17 --run "dirname \$(dirname \$(which javac))")
+
+        # Ensure gogio is installed
+        if ! command -v ~/go/bin/gogio &> /dev/null; then
+            echo "Installing gogio..."
+            nix-shell -p go --run "go install gioui.org/cmd/gogio@latest"
+        fi
+
+        steam-run bash -c "
+            export PATH=\"$GO_PATH:\$HOME/go/bin:\$PATH\"
+            export ANDROID_HOME=\"\$HOME/Android/Sdk\"
+            export JAVA_HOME=\"$JAVA_HOME\"
+            gogio -target android -appid io.github.jaycee1285.giopad .
+        "
+        echo "Built: giopad.apk"
+        ;;
+    *)
+        echo "Usage: ./stack-build [desktop|android]"
+        exit 1
+        ;;
+esac

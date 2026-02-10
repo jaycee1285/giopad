@@ -9,7 +9,9 @@ require (
 
 require (
 	gioui.org/shader v1.0.8 // indirect
+	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
+	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20250408133849-7e4ce0ab07d0 // indirect

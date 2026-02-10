@@ -69,6 +69,7 @@ func Yellow() color.NRGBA      { return CurrentTheme.Yellow }
 func Blue() color.NRGBA        { return CurrentTheme.Blue }
 func Purple() color.NRGBA      { return CurrentTheme.Purple }
 func Cyan() color.NRGBA        { return CurrentTheme.Cyan }
+func Accent() color.NRGBA      { return CurrentTheme.Blue }
 
 // ToggleTheme switches between light and dark
 func ToggleTheme() {

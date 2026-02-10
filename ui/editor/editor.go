@@ -1,8 +1,7 @@
 package editor
 
 import (
-	"os"
-
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/text"
 	"gioui.org/unit"
@@ -12,6 +11,7 @@ import (
 	"gioui.org/x/richtext"
 
 	"giopad/app"
+	"giopad/fs"
 )
 
 type (
@@ -21,17 +21,17 @@ type (
 
 // Editor displays markdown content
 type Editor struct {
-	currentPath string
-	content     []byte
-	renderer    *markdown.Renderer
-	spans       []richtext.SpanStyle
-	textState   richtext.InteractiveText
-	list        layout.List
+	currentPath  string
+	savedContent []byte // Content as saved on disk
+	renderer     *markdown.Renderer
+	spans        []richtext.SpanStyle
+	textState    richtext.InteractiveText
+	list         layout.List
 
 	// Edit mode
-	editMode   bool
-	textEditor widget.Editor
-	dirty      bool
+	editMode     bool
+	textEditor   widget.Editor
+	requestFocus bool
 }
 
 // New creates a new Editor
@@ -61,15 +61,14 @@ func (e *Editor) LoadFile(path string) error {
 		return nil // Already loaded
 	}
 
-	content, err := os.ReadFile(path)
+	content, err := fs.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
 	e.currentPath = path
-	e.content = content
+	e.savedContent = content
 	e.editMode = false
-	e.dirty = false
 
 	// Set editor content
 	e.textEditor.SetText(string(content))
@@ -91,38 +90,35 @@ func (e *Editor) ToggleEdit() {
 	}
 
 	if e.editMode {
-		// Leaving edit mode - update content and re-render
-		newContent := e.textEditor.Text()
-		if newContent != string(e.content) {
-			e.content = []byte(newContent)
-			e.dirty = true
-			// Re-render markdown
-			if spans, err := e.renderer.Render(e.content); err == nil {
-				e.spans = spans
-			}
+		// Leaving edit mode - re-render markdown from current text
+		currentText := []byte(e.textEditor.Text())
+		if spans, err := e.renderer.Render(currentText); err == nil {
+			e.spans = spans
 		}
 	} else {
-		// Entering edit mode - focus at start
+		// Entering edit mode - request focus
 		e.textEditor.SetCaret(0, 0)
+		e.requestFocus = true
 	}
 	e.editMode = !e.editMode
 }
 
 // Save writes content to disk
 func (e *Editor) Save() error {
-	if e.currentPath == "" || !e.dirty {
+	if e.currentPath == "" || !e.IsDirty() {
 		return nil
 	}
-	err := os.WriteFile(e.currentPath, e.content, 0644)
+	content := []byte(e.textEditor.Text())
+	err := fs.WriteFile(e.currentPath, content)
 	if err == nil {
-		e.dirty = false
+		e.savedContent = content
 	}
 	return err
 }
 
 // IsDirty returns true if there are unsaved changes
 func (e *Editor) IsDirty() bool {
-	return e.dirty
+	return e.textEditor.Text() != string(e.savedContent)
 }
 
 // IsEditMode returns true if in edit mode
@@ -145,6 +141,12 @@ func (e *Editor) Layout(gtx C, th *material.Theme) D {
 		Bottom: unit.Dp(16),
 	}.Layout(gtx, func(gtx C) D {
 		if e.editMode {
+			// Request focus if needed
+			if e.requestFocus {
+				gtx.Execute(key.FocusCmd{Tag: &e.textEditor})
+				e.requestFocus = false
+			}
+
 			// Edit mode - raw text editor
 			ed := material.Editor(th, &e.textEditor, "")
 			ed.Color = app.Foreground()
