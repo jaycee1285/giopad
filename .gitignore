@@ -12,3 +12,21 @@ go.sum
 
 # Nix
 result
+
+# Claude Code agent artifacts
+.claude/
+**/CLAUDE.md
+!CLAUDE.md
+
+result-*
+.direnv/
+
+# Release artifacts
+*.tar.xz
+*.tar.gz
+*.xpi
+
+# OS (cross-platform safety)
+.DS_Store
+Thumbs.db
+
